@@ -141,8 +141,11 @@ def save_images(images, labels):
             if exc.errno == errno.EEXIST:
                 pass
         filename = directory + str(i)
-        print(filename)
         save_image(image, filename)
+
+        if i % 1000 == 0:
+            print(filename)
+
         i = i+1
     
 if __name__ == "__main__":
