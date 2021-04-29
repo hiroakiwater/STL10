@@ -4,6 +4,7 @@ import sys
 import os, sys, tarfile, errno
 import numpy as np
 import matplotlib.pyplot as plt
+import argparse
     
 if sys.version_info >= (3, 0, 0):
     import urllib.request as urllib # ugly but works
@@ -33,6 +34,7 @@ DATA_URL = 'http://ai.stanford.edu/~acoates/stl10/stl10_binary.tar.gz'
 
 # path to the binary train file with image data
 DATA_PATH = './data/stl10_binary/train_X.bin'
+UNLABELED_DATA_PATH = './data/stl10_binary/unlabeled_X.bin'
 
 # path to the binary train file with labels
 LABEL_PATH = './data/stl10_binary/train_y.bin'
@@ -129,8 +131,10 @@ def save_images(images, labels):
     print("Saving images to disk")
     i = 0
     for image in images:
-        label = labels[i]
-        directory = './img/' + str(label) + '/'
+        directory = './img/unlabeled/'
+        if labels is not None:
+            label = labels[i]
+            directory = './img/' + str(label) + '/'
         try:
             os.makedirs(directory, exist_ok=True)
         except OSError as exc:
@@ -142,20 +146,35 @@ def save_images(images, labels):
         i = i+1
     
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='Download STL10 images and output PNG files.')
+
+    parser.add_argument('--check', metavar='c', default='without-check', help='show the loaded image.')
+    parser.add_argument('--type', metavar='t', default='label', help='set output type: labeled, unlabeled')
+
+    args = parser.parse_args()
+
     # download data if needed
     download_and_extract()
 
-    # test to check if the image is read correctly
-    with open(DATA_PATH) as f:
-        image = read_single_image(f)
-        plot_image(image)
+    image_path = DATA_PATH
+
+    if args.type == 'unlabeled':
+        image_path = UNLABELED_DATA_PATH
+
+    if args.check == 'show':
+        # test to check if the image is read correctly
+        with open(image_path) as f:
+            image = read_single_image(f)
+            plot_image(image)
 
     # test to check if the whole dataset is read correctly
-    images = read_all_images(DATA_PATH)
+    images = read_all_images(image_path)
     print(images.shape)
 
-    labels = read_labels(LABEL_PATH)
-    print(labels.shape)
+    labels = None
+    if args.type != 'unlabeled':
+        labels = read_labels(LABEL_PATH)
+        print(labels.shape)
 
     # save images to disk
     save_images(images, labels)
